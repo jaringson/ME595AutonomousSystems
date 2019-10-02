@@ -25,18 +25,18 @@ class UKF:
         self.mu = np.array([[-10],[-10],[0]])
 
         self.n = 3
-        L = 7
+        self.L = self.n*2+1
 
         alpha = 0.4
         kappa = 4
         beta = 2
-        self.gamma = alpha**2*(self.n+kappa)-self.n
+        self.gamma = alpha**2*(self.L+kappa)-self.L
 
-        self.wm = [self.gamma/(L+self.gamma)]
-        self.wc = [self.gamma/(L+self.gamma) + (1-alpha**2+beta)]
-        for i in range(1,2*L+1):
-            self.wm.append(1/(2*(L+self.gamma)))
-            self.wc.append(1/(2*(L+self.gamma)))
+        self.wm = [self.gamma/(self.L+self.gamma)]
+        self.wc = [self.gamma/(self.L+self.gamma) + (1-alpha**2+beta)]
+        for i in range(1,2*self.L+1):
+            self.wm.append(1/(2*(self.L+self.gamma)))
+            self.wc.append(1/(2*(self.L+self.gamma)))
 
         # self.wm = np.array([self.wm])
         # self.wc = np.array([self.wc])
@@ -86,11 +86,14 @@ class UKF:
         Chi_x_next = np.zeros_like(Chi_x)
         for i in range(Chi_u.shape[1]):
             Chi_x_next[:,i] = self.propagateDynamics(input_u[:,i], Chi_x[:,i])
-        set_trace()
 
         self.mu = np.atleast_2d(np.sum(np.multiply(self.wm,Chi_x_next),axis=1)).T
         intermediate = ((Chi_x_next-self.mu).T@(Chi_x_next-self.mu))
-        self.Sig =
+
+        self.Sig = []
+        for i in range(self.L):
+            self.Sig =+ self.wc[i]*(Chi_x_next[:,i]-self.mu)@(Chi_x_next[:,i]-self.mu).T
+        set_trace()
         G = np.array([
             [1, 0, -vo * np.cos(theta) + vo * np.cos(theta+omega*P.Ts)],
             [0, 1, -vo * np.sin(theta) + vo * np.sin(theta+omega*P.Ts)],
