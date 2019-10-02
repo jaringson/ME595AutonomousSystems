@@ -20,9 +20,9 @@ class UKF:
 
         self.landmarks = [lm1, lm2, lm3]
 
+        self.K = np.zeros((3,2))
         self.Sig = np.diag((1,1,0.1))
-
-        self.mu = np.array([[-10],[-10],[0]])
+        self.mu = np.array([[-5],[-2],[np.pi/2]])
 
         self.n = 3
         self.L = self.n*2+1
@@ -30,22 +30,32 @@ class UKF:
         alpha = 0.4
         kappa = 4
         beta = 2
-        self.gamma = alpha**2*(self.L+kappa)-self.L
+        self.lam = alpha**2*(self.L+kappa)-self.L
+        self.gamma = np.sqrt(self.L+self.lam)
 
-        self.wm = [self.gamma/(self.L+self.gamma)]
-        self.wc = [self.gamma/(self.L+self.gamma) + (1-alpha**2+beta)]
+        self.wm = [self.lam/(self.L+self.lam)]
+        self.wc = [self.lam/(self.L+self.lam) + (1-alpha**2+beta)]
         for i in range(1,2*self.L+1):
-            self.wm.append(1/(2*(self.L+self.gamma)))
-            self.wc.append(1/(2*(self.L+self.gamma)))
+            self.wm.append(1.0/(2*(self.L+self.lam)))
+            self.wc.append(1.0/(2*(self.L+self.lam)))
 
         # self.wm = np.array([self.wm])
         # self.wc = np.array([self.wc])
 
+        self.Chi_x = []
+        self.Chi_u = []
+        self.Chi_z = []
+
+        self.Chi_x_bar = []
+
+        self.Sig_bar = []
+        self.mu_bar = []
+
 
     def run(self, state, u):
         self.propagate(u)
-        for i  in range(3):
-            self.update(state, self.landmarks[i])
+        # for i  in range(3):
+        self.update(state.T.tolist()[0], self.landmarks[0])
 
 
     def propagateDynamics(self, u, state):
@@ -75,72 +85,68 @@ class UKF:
 
         mu_a = np.vstack((self.mu, np.zeros((4,1))))
 
-        Sig_a = np.block([  [self.Sig,np.zeros((3,4))], [np.zeros((2,3)),M,np.zeros((2,2))],  [np.zeros((2,5)),self.Q]])
+        Sig_a = np.block([  [self.Sig,np.zeros((3,4))],
+            [np.zeros((2,3)),M,np.zeros((2,2))],
+            [np.zeros((2,5)),self.Q]])
+
+        # print(Sig_a)
 
         Chi_a = np.block([ mu_a, mu_a+self.gamma*np.linalg.cholesky(Sig_a), mu_a-self.gamma*np.linalg.cholesky(Sig_a)])
-        Chi_x = Chi_a[:3,:]
-        Chi_u = Chi_a[3:5,:]
-        Chi_z = Chi_a[5:,:]
+        self.Chi_x = Chi_a[:3,:]
+        self.Chi_u = Chi_a[3:5,:]
+        self.Chi_z = Chi_a[5:,:]
 
-        input_u = np.array([u]).T + Chi_u
-        Chi_x_next = np.zeros_like(Chi_x)
-        for i in range(Chi_u.shape[1]):
-            Chi_x_next[:,i] = self.propagateDynamics(input_u[:,i], Chi_x[:,i])
+        input_u = np.array([u]).T + self.Chi_u
+        # set_trace()
+        self.Chi_x_bar = np.zeros_like(self.Chi_x)
+        for i in range(self.Chi_u.shape[1]):
+            self.Chi_x_bar[:,i] = self.propagateDynamics(input_u[:,i], self.Chi_x[:,i])
 
-        self.mu = np.atleast_2d(np.sum(np.multiply(self.wm,Chi_x_next),axis=1)).T
-        intermediate = ((Chi_x_next-self.mu).T@(Chi_x_next-self.mu))
-
-        self.Sig = []
-        for i in range(self.L):
-            self.Sig =+ self.wc[i]*(Chi_x_next[:,i]-self.mu)@(Chi_x_next[:,i]-self.mu).T
-        set_trace()
-        G = np.array([
-            [1, 0, -vo * np.cos(theta) + vo * np.cos(theta+omega*P.Ts)],
-            [0, 1, -vo * np.sin(theta) + vo * np.sin(theta+omega*P.Ts)],
-            [0, 0, 1]
-            ])
-
-        V = np.array([
-            [(-np.sin(theta)+np.sin(theta+omega*P.Ts))/omega, (v*(np.sin(theta)-np.sin(theta+omega*P.Ts)))/omega**2 + (v*np.cos(theta+omega*P.Ts)*P.Ts)/omega],
-            [(np.cos(theta)-np.cos(theta+omega*P.Ts))/omega, -(v*(np.cos(theta)-np.cos(theta+omega*P.Ts)))/omega**2 + (v*np.sin(theta+omega*P.Ts)*P.Ts)/omega],
-            [0, P.Ts]
-            ])
+        self.mu_bar = np.atleast_2d(np.sum(np.multiply(self.wm,self.Chi_x_bar),axis=1)).T
+        self.Sig_bar = np.zeros((3,3))
+        for i in range(2*self.L+1):
+            self.Sig_bar += self.wc[i]*(self.Chi_x_bar[:,i]-self.mu_bar.T).T@(self.Chi_x_bar[:,i]-self.mu_bar.T)
 
 
-        self.mu = self.mu + np.array([
-            [-vo * np.sin(theta) + vo * np.sin(theta+omega*P.Ts)],
-            [vo * np.cos(theta) - vo * np.cos(theta+omega*P.Ts)],
-            [omega*P.Ts]])
-
-        self.Sig = G @ self.Sig @ G.T + V @ M @ V.T
-
-
-    def update(self, state, truth):
+    def measurement(self, state, landmark):
         z = np.array([
-            [np.sqrt((truth[0]-state[0])**2+(truth[1]-state[1])**2) + np.random.normal(0,P.sig_r)],
-            [np.arctan2(truth[1]-state[1],truth[0]-state[0])-state[2] + np.random.normal(0,P.sig_phi)]
+            np.sqrt((landmark[0]-state[0])**2+(landmark[1]-state[1])**2),
+            np.arctan2(landmark[1]-state[1],landmark[0]-state[0])-state[2]
+            ])
+        return z
+
+
+    def update(self, state, landmark):
+        z = np.array([
+            [np.sqrt((landmark[0]-state[0])**2+(landmark[1]-state[1])**2) + np.random.normal(0,P.sig_r)],
+            [np.arctan2(landmark[1]-state[1],landmark[0]-state[0])-state[2] + np.random.normal(0,P.sig_phi)]
             ])
         # z += np.random.multivariate_normal(np.array([0.0,0.0]), self.Q, 1).T
 
-        q = (truth[0]-self.mu[0][0])**2+(truth[1]-self.mu[1][0])**2
-        z_hat = np.array([
-            [np.sqrt(q)],
-            [np.arctan2(truth[1]-self.mu[1][0],truth[0]-self.mu[0][0])-self.mu[2][0]]
-            ])
+        Z_bar = np.zeros((2,self.Chi_x_bar.shape[1]))
+        for i in range(self.Chi_x_bar.shape[1]):
+            Z_bar[:,i] = self.measurement(self.Chi_x_bar[:,i],landmark) + self.Chi_z[:,i]
 
-        H = np.array([
-            [-(truth[0]-self.mu[0][0])/np.sqrt(q), -(truth[1]-self.mu[1][0])/np.sqrt(q), 0],
-            [(truth[1]-self.mu[1][0])/q, -(truth[0]-self.mu[0][0])/q, -1]
-            ])
+        z_hat = np.atleast_2d(np.sum(np.multiply(self.wm,Z_bar),axis=1)).T
 
-        S = H @ self.Sig @ H.T + self.Q
-        K = self.Sig @ H.T @ np.linalg.inv(S)
+        S = np.zeros((2,2))
+        Sig_x_z = np.zeros((3,2))
+        for i in range(2*self.L+1):
+            S += self.wc[i]*(Z_bar[:,i]-z_hat.T).T @ (Z_bar[:,i]-z_hat.T)
+            Sig_x_z += self.wc[i]*(self.Chi_x_bar[:,i]-self.mu_bar.T).T @ (Z_bar[:,i]-z_hat.T)
 
-        self.mu = self.mu + K @ (z-z_hat)
-        self.Sig = (np.eye(3) - K @ H) @ self.Sig
+        self.K = Sig_x_z @ np.linalg.inv(S)
+
+        # print(self.mu)
+        # set_trace()
+        self.mu = self.mu_bar + self.K @ (z-z_hat)
+        self.Sig = self.Sig_bar - self.K @ S @ self.K.T
 
     def get_mu(self):
-        return self.mu.T.tolist()[0]
+        return self.mu
 
     def get_sig(self):
-        return self.Sig.tolist()
+        return np.array([[self.Sig[0,0]],[self.Sig[1,1]], [self.Sig[2,2]]])
+
+    def get_k(self):
+        return self.K.reshape((6,1))

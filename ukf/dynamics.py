@@ -41,7 +41,7 @@ class Dynamics:
     def states(self):
         # noise_x = self.state[0] + np.random.normal(0, np.sqrt(P.alpha1*v**2+P.alpha2*omega**2))
         # noise_y = self.state[1] + np.random.normal(0, np.sqrt(P.alpha3*v**2+P.alpha4*omega**2))
-        return self.state.T.tolist()[0]
+        return self.state
 
     def wrap_angle(self):
         while(self.state[2][0] < -np.pi):

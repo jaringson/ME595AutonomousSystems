@@ -30,7 +30,7 @@ class plotData:
 
         # create a handle for every subplot.
         self.handle = []
-        self.handle.append(myPlot(self.ax[0], ylabel='x (m)', title='Arm Data'))
+        self.handle.append(myPlot(self.ax[0], ylabel='x (m)', title='State and Estimate Data'))
         self.handle.append(myPlot(self.ax[1], ylabel='y (m)'))
         self.handle.append(myPlot(self.ax[2], xlabel='t(s)', ylabel='theta (deg)'))
 
@@ -43,7 +43,7 @@ class plotData:
         self.sig_theta = []
 
         self.handle2 = []
-        self.handle2.append(myPlot(self.ax2[0], ylabel='X Error'))
+        self.handle2.append(myPlot(self.ax2[0], ylabel='X Error', title='Error Data'))
         self.handle2.append(myPlot(self.ax2[1], ylabel='Y Error'))
         self.handle2.append(myPlot(self.ax2[2], xlabel='t(s)', ylabel='Theta Error'))
 
