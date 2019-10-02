@@ -56,7 +56,7 @@ while t < P.t_end:
 
     # dataPlot.update(t, dynamics.states(), ukf.get_mu(), ukf.get_sig())
 
-    plt.pause(0.0001)
+    # plt.pause(0.0001)
 # set_trace()
 
 # Keeps the program from closing until the user presses a button.

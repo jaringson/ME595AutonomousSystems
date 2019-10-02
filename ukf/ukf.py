@@ -21,8 +21,8 @@ class UKF:
         self.landmarks = [lm1, lm2, lm3]
 
         self.K = np.zeros((3,2))
-        self.Sig = np.diag((1,1,0.1))
-        self.mu = np.array([[-5],[-2],[np.pi/2]])
+        self.Sig = np.diag((0.01,0.01,0.01))
+        self.mu = np.array([[0],[0],[0]])
 
         self.n = 3
         self.L = self.n*2+1
@@ -46,16 +46,16 @@ class UKF:
         self.Chi_u = []
         self.Chi_z = []
 
-        self.Chi_x_bar = []
-
         self.Sig_bar = []
         self.mu_bar = []
 
 
     def run(self, state, u):
         self.propagate(u)
-        # for i  in range(3):
-        self.update(state.T.tolist()[0], self.landmarks[0])
+        for i in range(3):
+            self.update(state.T.tolist()[0], self.landmarks[i])
+            self.get_sigma_points(u)
+            self.use_sigma_points()
 
 
     def propagateDynamics(self, u, state):
@@ -72,12 +72,23 @@ class UKF:
         return state
 
     def propagate(self, u):
+
+        self.get_sigma_points(u)
+
+        input_u = np.array([u]).T + self.Chi_u
+        # set_trace()
+        Chi_x_bar = np.zeros_like(self.Chi_x)
+        for i in range(self.Chi_u.shape[1]):
+            Chi_x_bar[:,i] = self.propagateDynamics(input_u[:,i], self.Chi_x[:,i])
+
+        self.Chi_x = Chi_x_bar
+
+        self.use_sigma_points()
+
+
+    def get_sigma_points(self, u):
         v = u[0]
         omega = u[1]
-        theta = self.mu[2][0]
-        vo = v/omega
-
-
         M = np.array([
             [P.alpha1*v**2+P.alpha2*omega**2, 0],
             [0, P.alpha3*v**2+P.alpha4*omega**2]
@@ -96,17 +107,13 @@ class UKF:
         self.Chi_u = Chi_a[3:5,:]
         self.Chi_z = Chi_a[5:,:]
 
-        input_u = np.array([u]).T + self.Chi_u
-        # set_trace()
-        self.Chi_x_bar = np.zeros_like(self.Chi_x)
-        for i in range(self.Chi_u.shape[1]):
-            self.Chi_x_bar[:,i] = self.propagateDynamics(input_u[:,i], self.Chi_x[:,i])
+    def use_sigma_points(self):
 
-        self.mu_bar = np.atleast_2d(np.sum(np.multiply(self.wm,self.Chi_x_bar),axis=1)).T
+
+        self.mu_bar = np.atleast_2d(np.sum(np.multiply(self.wm,self.Chi_x),axis=1)).T
         self.Sig_bar = np.zeros((3,3))
         for i in range(2*self.L+1):
-            self.Sig_bar += self.wc[i]*(self.Chi_x_bar[:,i]-self.mu_bar.T).T@(self.Chi_x_bar[:,i]-self.mu_bar.T)
-
+            self.Sig_bar += self.wc[i]*(self.Chi_x[:,i]-self.mu_bar.T).T@(self.Chi_x[:,i]-self.mu_bar.T)
 
     def measurement(self, state, landmark):
         z = np.array([
@@ -123,9 +130,9 @@ class UKF:
             ])
         # z += np.random.multivariate_normal(np.array([0.0,0.0]), self.Q, 1).T
 
-        Z_bar = np.zeros((2,self.Chi_x_bar.shape[1]))
-        for i in range(self.Chi_x_bar.shape[1]):
-            Z_bar[:,i] = self.measurement(self.Chi_x_bar[:,i],landmark) + self.Chi_z[:,i]
+        Z_bar = np.zeros((2,self.Chi_x.shape[1]))
+        for i in range(self.Chi_x.shape[1]):
+            Z_bar[:,i] = self.measurement(self.Chi_x[:,i],landmark) + self.Chi_z[:,i]
 
         z_hat = np.atleast_2d(np.sum(np.multiply(self.wm,Z_bar),axis=1)).T
 
@@ -133,7 +140,7 @@ class UKF:
         Sig_x_z = np.zeros((3,2))
         for i in range(2*self.L+1):
             S += self.wc[i]*(Z_bar[:,i]-z_hat.T).T @ (Z_bar[:,i]-z_hat.T)
-            Sig_x_z += self.wc[i]*(self.Chi_x_bar[:,i]-self.mu_bar.T).T @ (Z_bar[:,i]-z_hat.T)
+            Sig_x_z += self.wc[i]*(self.Chi_x[:,i]-self.mu_bar.T).T @ (Z_bar[:,i]-z_hat.T)
 
         self.K = Sig_x_z @ np.linalg.inv(S)
 
