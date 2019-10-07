@@ -40,20 +40,25 @@ class Animation:
         ax.set_title(title)
 
 
-    def draw(self, state):
+    def draw(self, state, Chi=np.array([])):
 
         self.drawVehicle(state)
-
+        if Chi.shape[0] > 0:
+            index = 1
+            for i in range(Chi.shape[1]):
+                self.drawVehicle(Chi[:,i], color="red", r=0.1, index=index)
+                index += 1
 
         if self.flagInit:
             self.flagInit = False
 
 
-    def drawVehicle(self, state, color="limegreen"):
+
+    def drawVehicle(self, state, color="limegreen", r=0.5, index=0):
         x_pos = state[0]
         y_pos = state[1]
         theta = state[2]
-        radius = 0.5
+        radius = r
 
         xy = (x_pos,y_pos)
 
@@ -64,12 +69,12 @@ class Animation:
             self.handle.append(mpatches.CirclePolygon(xy,
                 radius = radius, resolution = 15,
                 fc = color, ec = 'black'))
-            self.ax.add_patch(self.handle[0])
+            self.ax.add_patch(self.handle[2*index])
 
             line, = self.ax.plot(X,Y,lw = 1, c = 'red')
             self.handle.append(line)
         else:
-            self.handle[0]._xy=xy
+            self.handle[2*index]._xy=xy
 
-            self.handle[1].set_xdata(X)
-            self.handle[1].set_ydata(Y)
+            self.handle[2*index+1].set_xdata(X)
+            self.handle[2*index+1].set_ydata(Y)

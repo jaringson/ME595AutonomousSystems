@@ -23,19 +23,18 @@ from animation import Animation
 # reload(plotData)
 # from plotData import plotData
 
-import ukf
-reload(ukf)
-from ukf import UKF
+import mcl
+reload(mcl)
+from mcl import MCL
 
 dynamics = Dynamics()
 animation = Animation()
 # dataPlot = plotData()
-ukf = UKF()
+mcl = MCL()
 
 states = dynamics.states()
-mu = ukf.get_mu()
-sig = ukf.get_sig()
-Ks = ukf.get_k()
+mu = mcl.get_mu()
+std = mcl.get_std()
 
 t = P.t_start
 while t < P.t_end:
@@ -48,18 +47,19 @@ while t < P.t_end:
         noise_omega = omegac + np.random.normal(0, np.sqrt(P.alpha3*vc**2+P.alpha4*omegac**2))
 
         u = [noise_v,noise_omega]
+
+        u = [vc,omegac]
         dynamics.propagateDynamics(u)
-        # animation.draw(dynamics.states())
-        ukf.run(dynamics.states(), u)
+        animation.draw(dynamics.states(), Chi=mcl.get_particles())
+        mcl.run(dynamics.states(), u)
 
         states = np.hstack((states, dynamics.states()))
-        mu = np.hstack((mu, ukf.get_mu()))
-        sig = np.hstack((sig, ukf.get_sig()))
-        Ks = np.hstack((Ks, ukf.get_k()))
+        mu = np.hstack((mu, mcl.get_mu()))
+        std = np.vstack((std, mcl.get_std()))
 
     # dataPlot.update(t, dynamics.states(), ukf.get_mu(), ukf.get_sig())
 
-    # plt.pause(0.0001)
+    plt.pause(0.0001)
 # set_trace()
 
 # Keeps the program from closing until the user presses a button.
@@ -89,33 +89,20 @@ fig = plt.figure(3)
 
 ax = fig.add_subplot(311)
 ax.plot(np.linspace(0,P.t_end,num=states.shape[1]), states[0,:] - mu[0,:], label='Error')
-ax.plot(np.linspace(0,P.t_end,num=states.shape[1]), 2*np.sqrt(sig[0,:]), label='2 Sigma', color='green')
-ax.plot(np.linspace(0,P.t_end,num=states.shape[1]), -2*np.sqrt(sig[0,:]), color='green')
+ax.plot(np.linspace(0,P.t_end,num=states.shape[1]), 2*std[:,0], label='2 Sigma', color='green')
+ax.plot(np.linspace(0,P.t_end,num=states.shape[1]), -2*std[:,0], color='green')
 ax.legend()
 
 ax = fig.add_subplot(312)
 ax.plot(np.linspace(0,P.t_end,num=states.shape[1]), states[1,:] - mu[1,:], label='Error')
-ax.plot(np.linspace(0,P.t_end,num=states.shape[1]), 2*np.sqrt(sig[1,:]), label='2 Sigma', color='green')
-ax.plot(np.linspace(0,P.t_end,num=states.shape[1]), -2*np.sqrt(sig[1,:]), color='green')
+ax.plot(np.linspace(0,P.t_end,num=states.shape[1]), 2*std[:,1], label='2 Sigma', color='green')
+ax.plot(np.linspace(0,P.t_end,num=states.shape[1]), -2*std[:,1], color='green')
 
 ax = fig.add_subplot(313)
 ax.plot(np.linspace(0,P.t_end,num=states.shape[1]), states[2,:] - mu[2,:], label='Error')
-ax.plot(np.linspace(0,P.t_end,num=states.shape[1]), 2*np.sqrt(sig[2,:]), label='2 Sigma', color='green')
-ax.plot(np.linspace(0,P.t_end,num=states.shape[1])  , -2*np.sqrt(sig[2,:]), color='green')
+ax.plot(np.linspace(0,P.t_end,num=states.shape[1]), 2*std[:,2], label='2 Sigma', color='green')
+ax.plot(np.linspace(0,P.t_end,num=states.shape[1]), -2*std[:,2], color='green')
 
-fig = plt.figure(4)
 
-ax = fig.add_subplot(611)
-ax.plot(np.linspace(0,P.t_end,num=states.shape[1]), Ks[0,:])
-ax = fig.add_subplot(612)
-ax.plot(np.linspace(0,P.t_end,num=states.shape[1]), Ks[1,:])
-ax = fig.add_subplot(613)
-ax.plot(np.linspace(0,P.t_end,num=states.shape[1]), Ks[2,:])
-ax = fig.add_subplot(614)
-ax.plot(np.linspace(0,P.t_end,num=states.shape[1]), Ks[3,:])
-ax = fig.add_subplot(615)
-ax.plot(np.linspace(0,P.t_end,num=states.shape[1]), Ks[4,:])
-ax = fig.add_subplot(616)
-ax.plot(np.linspace(0,P.t_end,num=states.shape[1]), Ks[5,:])
 
 plt.show()

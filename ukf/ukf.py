@@ -22,7 +22,7 @@ class UKF:
 
         self.K = np.zeros((3,2))
         self.Sig = np.diag((0.01,0.01,0.01))
-        self.mu = np.array([[0],[0],[0]])
+        self.mu = np.array([[-5],[-3],[np.pi/2]])
 
         self.n = 3
         self.L = self.n*2+1
@@ -52,7 +52,7 @@ class UKF:
 
     def run(self, state, u):
         self.propagate(u)
-        for i in range(3):
+        for i in range(1):
             self.update(state.T.tolist()[0], self.landmarks[i])
             self.get_sigma_points(u)
             self.use_sigma_points()
