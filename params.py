@@ -25,6 +25,8 @@ alpha1 = 0.1
 alpha2 = 0.01
 alpha3 = 0.01
 alpha4 = 0.1
+alpha5 = 0.01
+alpha6 = 0.01
 
 sig_r = 0.1
 sig_phi = 0.05

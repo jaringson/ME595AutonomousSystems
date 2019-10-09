@@ -34,11 +34,11 @@ def boxminus(q1,q2):
 def wrapAngle(angle, amt=np.pi):
 
     out = deepcopy(angle)
-    while any(angle < -amt):
-        out = out + 2*np.pi * (angle < -amt).astype(int)
+    while any(out < -amt):
+        out = out + 2*np.pi * (out < -amt).astype(int)
     while any(angle > amt):
-        out = out - 2*np.pi * (angle > amt).astype(int)
-
+        out = out - 2*np.pi * (out > amt).astype(int)
+    return out
 
 def normalize(v,axis=0):
     norm = np.sum(np.abs(v)**2,axis=axis)**(1./2)
