@@ -47,6 +47,7 @@ class MCL:
         w = np.ones(self.M)
         for i in range(3):
             w_ret = self.measurement_prob(state, x, self.landmarks[i])
+            # w_ret = w_ret/np.sum(w_ret)
             w *= w_ret
         # w += self.measurement_prob(state,x,self.landmarks[0])
         # set_trace()
@@ -88,6 +89,7 @@ class MCL:
 
 
     def propagateDynamics(self, u, state):
+        # set_trace()
         v_hat = u[0] + np.random.normal(0, np.sqrt(P.alpha1*u[0]**2+P.alpha2*u[1]**2), (self.M))
         omega_hat = u[1] + np.random.normal(0, np.sqrt(P.alpha3*u[0]**2+P.alpha4*u[1]**2), (self.M))
         gamma_hat = np.random.normal(0, np.sqrt(P.alpha5*u[0]**2+P.alpha6*u[1]**2), (self.M))
