@@ -7,6 +7,9 @@ from IPython.core.debugger import set_trace
 
 from plotter import Animation
 
+import sys
+np.set_printoptions(threshold=sys.maxsize)
+
 class GridCell:
     def __init__(self, x, y):
         self.prob = 0
@@ -28,49 +31,85 @@ def draw(grid):
     plt.pause(0.001)
 
 
-def inverse_range_sensor(m,x,y,theta,z):
+def inverse_range_sensor(grid,indices,xs,ys,x,y,theta,z,thk):
 
-    alpha = 1
+    z[1][np.isnan(z[0])] = thk.flatten()[np.isnan(z[0])]
+    z[0][np.isnan(z[0])] = 1000000
+    alpha = 2
     beta = 5
     z_max = 150
 
-    r = np.sqrt((m.x-x)**2+(m.y-y)**2)
-    phi = np.arctan2(m.y-y,m.x-x)-theta
+    r = np.sqrt((xs[indices]-x)**2+(ys[indices]-y)**2)
+    phi = np.arctan2(ys[indices]-y,xs[indices]-x)-theta
     # k = np.argmin(np.abs(phi-data['thk']))
-    k = np.argmin(np.abs(phi-z[1]))
-    # set_trace()
+    z_range = np.repeat(z[0],phi.shape[0]).reshape((11,phi.shape[0]))
+    z_bearing = np.repeat(z[1],phi.shape[0]).reshape((11,phi.shape[0]))
+
+    bearing_pick = np.repeat(thk.flatten(),phi.shape[0]).reshape((11,phi.shape[0]))
+    k = np.argmin(np.abs(phi-bearing_pick),axis=0)
+    # if np.isnan(z).any():
 
     l0 = np.log(0.5/(1-0.5))
-    if r > np.min([z_max, z[:,k][0]+alpha/2.0]) or np.abs(phi-z[:,k][1]) > beta/2.0:
-        return l0
-    if z[:,k][0] < z_max and np.abs(r-z[:,k][0]) < alpha/2.0:
-        return np.log(0.7/(1-0.7))
-    if r <= z[:,k][0]:
-        return np.log(0.4/(1-0.4))
-    # set_trace()
-    return l0
 
-grid = []
-for i in range(100):
-    for j in range(100):
-        cell = GridCell((j+1)-0.5,(i+1)-0.5)
-        grid.append(cell)
+
+    z_r_sel  = z_range.T[np.arange(phi.shape[0]), k]
+    z_b_sel  = z_bearing.T[np.arange(phi.shape[0]), k]
+    # set_trace()
+
+    # if r > np.minimum([np.ones_like(phi.shape[0])*z_max, r_sel+alpha/2.0]) or np.abs(phi-b_sel) > beta/2.0:
+    #     return np.ones_like(grid[indices])*l0
+    # temp = r > np.minimum(np.ones_like(phi.shape[0])*z_max, r_sel+alpha/2.0)
+    f_ind = np.logical_and(r > np.minimum(np.ones_like(phi)*z_max, z_r_sel+alpha/2.0), np.abs(phi-z_b_sel) > beta/2.0)
+    # set_trace()
+    temp = grid[indices]
+    temp[f_ind] = l0
+    grid[indices]= temp
+
+    s_ind = np.logical_and(z_r_sel < np.ones_like(phi)*z_max, np.abs(r-z_r_sel) < alpha/2.0)
+    temp = grid[indices]
+    temp[s_ind] = np.log(0.8/(1-0.8))
+    grid[indices] = temp
+    # if temp[k][0] < z_max and np.abs(r-temo[k][0]) < alpha/2.0:
+    #     return np.log(0.7/(1-0.7))
+
+    # grid[indices][r <= r_sel] = np.log(0.4/(1-0.4))
+    temp = grid[indices]
+    temp[r <= z_r_sel] = np.log(0.4/(1-0.4))
+    grid[indices] = temp
+
+    print(grid[indices][f_ind])
+    print(np.isnan(z[0]))
+
+    # set_trace()
+    return grid[indices]
+
+    # if r <= temp[k][0]:
+    #     return np.log(0.4/(1-0.4))
+    # # set_trace()
+    # return np.ones_like(grid[indices])*l0
+
+num = 100
+
+grid = np.zeros((num,num))
+xs = np.repeat(np.linspace(0,99,num),num).reshape((num,num)).T
+ys = np.repeat(np.linspace(0,99,num),num).reshape((num,num))
 
 animation = Animation()
 
 for i in range(data['z'].shape[2]):
     print(i)
-    if i % 50 == 0:
-        animation.drawAll(data['X'][:,i], grid)
-        plt.pause(0.01)
-        # break
+    # if i % 50 == 0:
+    #     animation.drawAll(data['X'][:,i], grid)
+    #     plt.pause(0.01)
+    #     # break
     x,y,theta = data['X'][:,i]
-    for cell in grid:
-        phi = np.arctan2(cell.y-y,cell.x-x)-theta
-        if phi < np.pi/2.0 and phi > -np.pi/2.0:
-            # lp = np.log(cell.prob/(1-cell.prob)) + inverse_range_sensor(cell,x,y,theta,data['z'][:,:,i]) + 0.00001
-            # set_trace()
-            # cell.prob = np.exp(lp/(1+lp))
-            cell.prob = cell.prob + inverse_range_sensor(cell,x,y,theta,data['z'][:,:,i])
-animation.drawAll(data['X'][:,-1], grid)
+    phi = np.arctan2(ys-y,xs-x)-theta
+    indices = np.logical_and(phi < np.pi/2.0, phi > -np.pi/2.0)
+    grid[indices] = grid[indices] + inverse_range_sensor(grid, indices, xs, ys, x,y,theta ,data['z'][:,:,i], data['thk'])
+
+
+# animation.drawAll(data['X'][:,-1], grid)
+plt.imshow(np.exp(grid)/(1+np.exp(grid)), cmap='gray', vmin=0, vmax=1)
+# plt.pause(0.01)
 plt.show()
+set_trace()

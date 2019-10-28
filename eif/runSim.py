@@ -39,13 +39,14 @@ for i in range(data['t'].shape[1]):
     # plt.pause(0.001)
 
 
+set_trace()
 
 fig = plt.figure(3)
 plt.title('Midterm 2D Plot')
-plt.plot(data['X_tr'][0], data['X_tr'][1], label='truth')
-plt.plot(estimate[:,0], estimate[:,1], label='estimate')
-plt.scatter(data['m'][0], data['m'][1], marker='*')
-plt.legend()
+plt.plot(data['X_tr'][0], data['X_tr'][1], label='Truth')
+plt.plot(estimate[:,0], estimate[:,1], label='Estimate')
+plt.scatter(data['m'][0], data['m'][1], marker='*', label='Landmarks')
+plt.legend(loc=(0.5,0.5))
 plt.show()
 
 plt.pause(1000)
