@@ -8,7 +8,7 @@ from IPython.core.debugger import set_trace
 from plotter import Animation
 
 import sys
-np.set_printoptions(threshold=sys.maxsize)
+# np.set_printoptions(threshold=sys.maxsize)
 
 class GridCell:
     def __init__(self, x, y):
@@ -33,6 +33,8 @@ def draw(grid):
 
 def inverse_range_sensor(grid,indices,xs,ys,x,y,theta,z,thk):
 
+    # if np.isnan(z[0]).any():
+    #     set_trace()
     z[1][np.isnan(z[0])] = thk.flatten()[np.isnan(z[0])]
     z[0][np.isnan(z[0])] = 1000000
     alpha = 2
@@ -59,8 +61,8 @@ def inverse_range_sensor(grid,indices,xs,ys,x,y,theta,z,thk):
     # if r > np.minimum([np.ones_like(phi.shape[0])*z_max, r_sel+alpha/2.0]) or np.abs(phi-b_sel) > beta/2.0:
     #     return np.ones_like(grid[indices])*l0
     # temp = r > np.minimum(np.ones_like(phi.shape[0])*z_max, r_sel+alpha/2.0)
-    f_ind = np.logical_and(r > np.minimum(np.ones_like(phi)*z_max, z_r_sel+alpha/2.0), np.abs(phi-z_b_sel) > beta/2.0)
-    # set_trace()
+    f_ind = np.logical_or(r > np.minimum(np.ones_like(phi)*z_max, z_r_sel+alpha/2.0), np.abs(phi-z_b_sel) > beta/2.0)
+    set_trace()
     temp = grid[indices]
     temp[f_ind] = l0
     grid[indices]= temp
