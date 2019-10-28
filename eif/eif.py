@@ -30,7 +30,7 @@ class EIF:
         self.mu = np.array([[-10],[-10],[0]])
 
         self.Om = np.linalg.inv(self.Sig)
-        self.epsilon = self.Om@self.mu
+        self.epsilon = self.Om @ self.mu
 
     def run(self, v, om, range, bearing):
         self.propagate(v, om)
@@ -39,6 +39,8 @@ class EIF:
             self.update(range[i], bearing[i], self.landmarks[i])
 
     def propagate(self, v, om):
+
+        self.mu = self.Sig @ self.epsilon
 
         theta = self.mu[2][0]
 
@@ -60,6 +62,8 @@ class EIF:
             [om*P.Ts]])
 
         self.Sig = G @ self.Sig @ G.T + V @ self.M @ V.T
+        self.Om = np.linalg.inv(self.Sig)
+        self.epsilon = self.Om @ self.mu
 
 
     def update(self, range, bearing, truth):
@@ -80,16 +84,22 @@ class EIF:
             [(truth[1]-self.mu[1][0])/q, -(truth[0]-self.mu[0][0])/q, -1]
             ])
 
-        S = H @ self.Sig @ H.T + self.Q
-        K = self.Sig @ H.T @ np.linalg.inv(S)
 
         res = z - z_hat
         res[1][0] = self.wrap_angle(res[1][0])
         # set_trace()
 
+        # S = H @ self.Sig @ H.T + self.Q
+        # K = self.Sig @ H.T @ np.linalg.inv(S)
+        #
+        # self.mu = self.mu + K @ (res)
+        # self.Sig = (np.eye(3) - K @ H) @ self.Sig
 
-        self.mu = self.mu + K @ (res)
-        self.Sig = (np.eye(3) - K @ H) @ self.Sig
+        self.Om = self.Om + H.T @ np.linalg.inv(self.Q) @ H
+        self.epsilon = self.epsilon + H.T @ np.linalg.inv(self.Q) @ (res + H @ self.mu)
+
+        self.Sig = np.linalg.inv(self.Om)
+        self.mu = self.Sig @ self.epsilon
 
     def get_mu(self):
         return self.mu.T.tolist()[0]

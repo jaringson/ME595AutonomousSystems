@@ -31,9 +31,9 @@ class plotData:
 
         # create a handle for every subplot.
         self.handle = []
-        self.handle.append(myPlot(self.ax[0], ylabel='x (m)', title='Midterm')) #, legend=['Truth', 'Estimate']))
+        self.handle.append(myPlot(self.ax[0], ylabel='x (m)', title='Midterm States', legend=['Truth', 'Estimate']))
         self.handle.append(myPlot(self.ax[1], ylabel='y (m)'))
-        self.handle.append(myPlot(self.ax[2], xlabel='t(s)', ylabel='theta (deg)'))
+        self.handle.append(myPlot(self.ax[2], xlabel='t (s)', ylabel='theta (deg)'))
 
 
         self.error_x = []
@@ -44,7 +44,7 @@ class plotData:
         self.sig_theta = []
 
         self.handle2 = []
-        self.handle2.append(myPlot(self.ax2[0], ylabel='X Error')) #, legend=('Error', '2 Sig')))
+        self.handle2.append(myPlot(self.ax2[0], ylabel='X Error', title='Midterm Errors', legend=['Error', '2 Sig', '-2 Sig']))
         self.handle2.append(myPlot(self.ax2[1], ylabel='Y Error'))
         self.handle2.append(myPlot(self.ax2[2], xlabel='t(s)', ylabel='Theta Error'))
 
@@ -132,12 +132,12 @@ class myPlot:
                                         data[i],
                                         color=self.colors[np.mod(i, len(self.colors) - 1)],
                                         ls=self.line_styles[np.mod(i, len(self.line_styles) - 1)],
-                                        label=self.legend if self.legend != None else None))
+                                        label=self.legend[i] if self.legend != None else None))
                 self.ax.add_line(self.line[i])
             self.init = False
-            # add legend if one is specified
-            if self.legend != None:
-                plt.legend(handles=self.line)
+            # # add legend if one is specified
+            # if self.legend != None:
+            #     plt.legend(handles=self.line)
         else: # Add new data to the plot
             # Updates the x and y data of each line.
             for i in range(len(self.line)):
@@ -147,3 +147,4 @@ class myPlot:
         # Adjusts the axis to fit all of the data
         self.ax.relim()
         self.ax.autoscale()
+        self.ax.legend()
