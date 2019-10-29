@@ -89,5 +89,5 @@ class Animation:
             else:
                 # t = 1
                 # self.handle[i].set_xdata(cell.prob)
-                self.handle[i].set_color(str(1-np.exp(cell.prob)/(1+np.exp(cell.prob))))
+                self.handle[i].set_color(str(1/(1+np.exp(cell.prob))))
             i = i + 1

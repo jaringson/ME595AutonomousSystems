@@ -41,6 +41,8 @@ while t < P.t_end:
     t_next_plot = t + P.t_plot
     while t < t_next_plot:
         t = t + P.Ts
+        if t >= 1:
+            mcl.change = True
         vc = 1+0.5*np.cos(2*np.pi*(0.2)*t)
         omegac = -0.2+2*np.cos(2*np.pi*(0.6)*t)
         noise_v = vc + np.random.normal(0, np.sqrt(P.alpha1*vc**2+P.alpha2*omegac**2))

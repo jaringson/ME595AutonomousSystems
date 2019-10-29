@@ -35,6 +35,9 @@ class MCL:
         b = np.array([[5],[5],[np.pi],[1.0/self.M]]) + np.vstack((self.mu,0))
         self.Chi = (b-a) * np.random.random((4,self.M)) + a
 
+
+        self.change = False
+
     def run(self, state, u):
         Chi_bar = np.array([])
         # for m in range(self.M):
@@ -61,6 +64,8 @@ class MCL:
 
         # set_trace()
         # print(Chi_bar)
+        # if(self.change == True):
+        #     self.M = 100
         self.Chi = self.low_variance_sampler(Chi_bar)
         # set_trace()
         # self.Chi[3,:] = np.ones(self.M)*1.0/self.M
@@ -108,9 +113,9 @@ class MCL:
         return 1.0/(np.sqrt(2*np.pi*b*b))*np.exp(-0.5*a*a/(b*b))
 
     def measurement_prob(self, true_state, state, landmark):
-        r = np.sqrt((landmark[0]-state[0])**2+(landmark[1]-state[1])**2)
+        r = np.sqrt((landmark[0]-state[0])**2+(landmark[1]-state[1])**2)+ np.random.normal(0,P.sig_r)
         # phi = np.arctan2(landmark[1]-state[1],landmark[0]-state[0])
-        phi = np.arctan2(landmark[1]-state[1],landmark[0]-state[0]) - state[2]
+        phi = np.arctan2(landmark[1]-state[1],landmark[0]-state[0]) - state[2]+ np.random.normal(0,P.sig_phi)
         phi = self.wrap_angle(phi)
 
         r_hat = np.sqrt((landmark[0]-true_state[0])**2+(landmark[1]-true_state[1])**2) + np.random.normal(0,P.sig_r)
@@ -123,7 +128,11 @@ class MCL:
         # print(phi,phi_hat,np.pi)
 
         # set_trace()
-        q = self.prob(r-r_hat,P.sig_r) * self.prob(self.wrap_angle(phi-phi_hat),P.sig_phi)
+        q = 0
+        if(self.change):
+            q = self.prob(r-r_hat,P.sig_r) * self.prob(self.wrap_angle(phi-phi_hat),P.sig_phi)
+        else:
+            q = self.prob(r-r_hat,np.sqrt(P.sig_r)) * self.prob(self.wrap_angle(phi-phi_hat),np.sqrt(P.sig_phi))
         # q = self.prob(r-r_hat,P.sig_r) * self.prob(phi-phi_hat,P.sig_phi)
         # print(np.max(weight))
         # print(r-r_hat)

@@ -32,14 +32,17 @@ def inverse_range_sensor(m,x,y,theta,z,thk):
     # if np.isnan(z).any():
     #     set_trace()
 
-    alpha = 1
-    beta = 5
+    z[1][np.isnan(z[0])] = thk.flatten()[np.isnan(z[0])]
+    z[0][np.isnan(z[0])] = 100000000
+
+    alpha = 1.0
+    beta = np.radians(5)
     z_max = 150
 
     r = np.sqrt((m.x-x)**2+(m.y-y)**2)
     phi = np.arctan2(m.y-y,m.x-x)-theta
     # k = np.argmin(np.abs(phi-data['thk']))
-    k = np.argmin(np.abs(phi-thk))
+    k = np.argmin(np.abs(phi-z[1]))
 
     l0 = np.log(0.5/(1-0.5))
     if np.isnan(z[0][k]):
@@ -54,7 +57,7 @@ def inverse_range_sensor(m,x,y,theta,z,thk):
     if r <= z[:,k][0]:
         return np.log(0.4/(1-0.4))
     # set_trace()
-    return l0
+    # return l0
 
 grid = []
 for i in range(100):
