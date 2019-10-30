@@ -38,8 +38,8 @@ def inverse_all(grid, xs, ys, x, y, theta, z, thk):
 
     z[1][np.isnan(z[0])] = thk.flatten()[np.isnan(z[0])]
     z[0][np.isnan(z[0])] = 1000000
-    alpha = 2
-    beta = np.radians(5)
+    alpha = 1.5
+    beta = np.radians(2)
     z_max = 150
     r = np.sqrt((xs-x)**2+(ys-y)**2)
     phi = np.arctan2(ys-y,xs-x)-theta
@@ -48,20 +48,20 @@ def inverse_all(grid, xs, ys, x, y, theta, z, thk):
     z_bearing = np.repeat(z[1],phi.shape[0]**2).reshape((11,phi.shape[0],100))
 
     bearing_pick = np.repeat(thk.flatten(),phi.shape[0]**2).reshape((11,phi.shape[0],100))
-    k = np.argmin(np.abs(phi-bearing_pick),axis=0)
+    k = np.argmin(np.abs(phi-z_bearing),axis=0)
 
     z_r_sel  = z_range.T[np.arange(phi.shape[0]), np.arange(phi.shape[0]), k]
     z_b_sel  = z_bearing.T[np.arange(phi.shape[0]), np.arange(phi.shape[0]), k]
 
-    # set_trace()
     f_ind = np.logical_or(r > np.minimum(np.ones_like(phi)*z_max, z_r_sel+alpha/2.0), np.abs(phi-z_b_sel) > beta/2.0)
     grid[f_ind]= np.log(0.5/(1-0.5))
+    # set_trace()
 
-    s_ind = np.logical_and(z_r_sel < np.ones_like(phi)*z_max, np.abs(r-z_r_sel) < alpha/2.0)
-    grid[s_ind] = np.log(0.8/(1-0.8))
+    s_ind = np.logical_and(np.logical_and(z_r_sel < np.ones_like(phi)*z_max, np.abs(r-z_r_sel) < alpha/2.0), np.logical_not(f_ind))
+    grid[s_ind] = np.log(0.7/(1-0.7))
 
-    grid[r <= z_r_sel] = np.log(0.4/(1-0.4))
-
+    t_ind = np.logical_and(np.logical_and(r <= z_r_sel, np.logical_not(s_ind)), np.logical_not(f_ind))
+    grid[t_ind] = np.log(0.3/(1-0.3))
     # set_trace()
     return grid
 
@@ -72,7 +72,7 @@ def inverse_range_sensor(grid,indices,xs,ys,x,y,theta,z,thk):
     #     set_trace()
     z[1][np.isnan(z[0])] = thk.flatten()[np.isnan(z[0])]
     z[0][np.isnan(z[0])] = 100000000
-    alpha = 2
+    alpha = 1
     beta = np.radians(5)
     z_max = 150
 
@@ -102,16 +102,18 @@ def inverse_range_sensor(grid,indices,xs,ys,x,y,theta,z,thk):
     temp[f_ind] = l0
     grid[indices]= temp
 
-    s_ind = np.logical_and(z_r_sel < np.ones_like(phi)*z_max, np.abs(r-z_r_sel) < alpha/2.0)
+    s_ind = np.logical_and(np.logical_and(z_r_sel < np.ones_like(phi)*z_max, np.abs(r-z_r_sel) < alpha/2.0), np.logical_not(f_ind))
+    # set_trace()
     temp = grid[indices]
-    temp[s_ind] = np.log(0.9/(1-0.9))
+    temp[s_ind] = np.log(0.8/(1-0.8))
     grid[indices] = temp
     # if temp[k][0] < z_max and np.abs(r-temo[k][0]) < alpha/2.0:
     #     return np.log(0.7/(1-0.7))
 
     # grid[indices][r <= r_sel] = np.log(0.4/(1-0.4))
+    t_ind = np.logical_and(np.logical_and(r <= z_r_sel, np.logical_not(f_ind)), np.logical_not(s_ind))
     temp = grid[indices]
-    temp[r <= z_r_sel] = np.log(0.4/(1-0.4))
+    temp[t_ind] = np.log(0.3/(1-0.3))
     grid[indices] = temp
 
     # print(grid[indices][f_ind])
@@ -153,4 +155,4 @@ plt.pause(0.001)
 # animation.drawAll(data['X'][:,-1], grid)
 # plt.pause(0.01)
 plt.show()
-set_trace()
+# set_trace()

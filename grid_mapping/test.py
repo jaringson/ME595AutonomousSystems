@@ -83,4 +83,4 @@ for i in range(data['z'].shape[2]):
             cell.prob = cell.prob + inverse_range_sensor(cell,x,y,theta,data['z'][:,:,i],data['thk'])
 animation.drawAll(data['X'][:,-1], grid)
 plt.show()
-set_trace()
+# set_trace()

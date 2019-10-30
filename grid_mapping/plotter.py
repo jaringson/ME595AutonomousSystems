@@ -83,6 +83,7 @@ class Animation:
             # print(i)
             if self.flagInit == True:
                 square = mpatches.Rectangle((cell.x-0.5,cell.y-0.5), 1, 1)
+                # square = mpatches.Rectangle((cell.x-1,cell.y-1), 1, 1)
                 square.set_color(str(1-np.exp(cell.prob)/(1+np.exp(cell.prob))))
                 self.handle.append(square)
                 self.ax.add_patch(square)
