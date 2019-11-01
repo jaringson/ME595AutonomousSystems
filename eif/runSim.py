@@ -16,6 +16,7 @@ eif = EIF()
 
 
 estimate = np.array([])
+information = np.array([])
 
 data = sio.loadmat('data.mat')
 
@@ -33,13 +34,14 @@ for i in range(data['t'].shape[1]):
 
     if estimate.size == 0:
         estimate = np.array(eif.get_mu())
+        information = np.array(eif.get_epsilon())
     else:
         estimate = np.vstack((estimate, eif.get_mu()))
-
+        information = np.vstack((information, eif.get_epsilon()))
     # plt.pause(0.001)
 
 
-set_trace()
+# set_trace()
 
 fig = plt.figure(3)
 plt.title('Midterm 2D Plot')
@@ -47,6 +49,21 @@ plt.plot(data['X_tr'][0], data['X_tr'][1], label='Truth')
 plt.plot(estimate[:,0], estimate[:,1], label='Estimate')
 plt.scatter(data['m'][0], data['m'][1], marker='*', label='Landmarks')
 plt.legend(loc=(0.5,0.5))
+plt.xlabel('x (m)')
+plt.ylabel('y (m)')
 plt.show()
+
+fig = plt.figure(4)
+ax = plt.subplot(311)
+plt.plot(data['t'][0], information[:,0])
+plt.title('Information Vector')
+ax = plt.subplot(312)
+plt.plot(data['t'][0], information[:,1])
+ax = plt.subplot(313)
+plt.plot(data['t'][0], information[:,2])
+ax.set_xlabel('t (s)')
+plt.show()
+
+
 
 plt.pause(1000)

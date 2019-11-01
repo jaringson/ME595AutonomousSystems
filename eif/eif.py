@@ -26,8 +26,8 @@ class EIF:
 
         self.landmarks = [lm1, lm2, lm3, lm4, lm5, lm6]
 
-        self.Sig = np.diag((1,1,0.1))
-        self.mu = np.array([[-10],[-10],[0]])
+        self.Sig = np.diag((0.1,0.1,0.1))
+        self.mu = np.array([[0],[0],[0]])
 
         self.Om = np.linalg.inv(self.Sig)
         self.epsilon = self.Om @ self.mu
@@ -103,6 +103,9 @@ class EIF:
 
     def get_mu(self):
         return self.mu.T.tolist()[0]
+
+    def get_epsilon(self):
+        return self.epsilon.T.tolist()[0]
 
     def get_sig(self):
         return self.Sig.tolist()

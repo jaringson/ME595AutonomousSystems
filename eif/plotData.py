@@ -46,7 +46,7 @@ class plotData:
         self.handle2 = []
         self.handle2.append(myPlot(self.ax2[0], ylabel='X Error', title='Midterm Errors', legend=['Error', '2 Sig', '-2 Sig']))
         self.handle2.append(myPlot(self.ax2[1], ylabel='Y Error'))
-        self.handle2.append(myPlot(self.ax2[2], xlabel='t(s)', ylabel='Theta Error'))
+        self.handle2.append(myPlot(self.ax2[2], xlabel='t (s)', ylabel='Theta Error'))
 
     def update(self, t, states, mu, sig):
         '''

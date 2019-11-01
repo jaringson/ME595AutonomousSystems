@@ -34,7 +34,7 @@ class PF:
 
         self.fw = FixedWing()
 
-        self.M = 1000
+        self.M = 100
 
         state_max = np.array([[5],  # (0)
                                [5],   # (1)
@@ -62,19 +62,26 @@ class PF:
     def run(self, state, u, dt):
         Chi_bar = np.array([])
         # for m in range(self.M):
-        for m in range(self.M):
-            temp_u = u + np.random.normal(0, 1, (4,))
-            self.Chi[0:13,m] = normalize(self.Chi[0:13,m])
-            x = self.fw.forward_simulate_dt(self.Chi[0:13,m], temp_u, dt)
+        # for m in range(self.M):
+        # set_trace()
+        temp_u = np.atleast_2d(u).T + np.random.normal(0, 1, (4,self.M))
+        # self.Chi[0:13:] = normalize(self.Chi[0:13,:])
+        x = self.fw.forward_simulate_dt(self.Chi[0:13,:], temp_u, dt)
 
-            # w = np.array([1])
-            w = self.measurement_prob(state, x)
-            if Chi_bar.size == 0:
-                Chi_bar = np.vstack((x,w))
-            else:
-                Chi_bar = np.hstack((Chi_bar,np.vstack((x,w))))
+        w = self.measurement_prob(state, x)
 
+        # if (any(w==0)):
+        #     # print(w)
+        #     w[w==0] += 1e-100
+        #     # print(w)
+        #     # set_trace()
+
+        Chi_bar = np.vstack((x,w))
+
+        # print(w)
+        # print(Chi_bar[13,:])
         Chi_bar[13,:] = Chi_bar[13,:]/np.sum(Chi_bar[13,:])
+        # print(Chi_bar[13,:])
         # set_trace()
         self.Chi = self.low_variance_sampler(Chi_bar)
         self.mu = np.atleast_2d(np.average(self.Chi[0:13,:],axis=1)).T
@@ -96,16 +103,19 @@ class PF:
             else:
                 Chi_bar = np.vstack((Chi_bar,Chi[:,i]))
 
-        return Chi_bar.T
+        Chi_bar = Chi_bar.T
+        Chi_bar[3,:] = np.ones(self.M) + 1.0/self.M
+        return Chi_bar
 
     def prob(self,a,b):
         return 1.0/(np.sqrt(2*np.pi*b*b))*np.exp(-0.5*a*a/(b*b))
 
     def measurement_prob(self, true_state, state):
         pos = self.prob(true_state[0]-state[0], 0.5)*self.prob(true_state[1]-state[1], 0.5)*self.prob(true_state[2]-state[2], 0.5)
-        dm = boxminus(np.atleast_2d(true_state[6:10]).T,state[6:10])
-        rot = 1 #self.prob(dm[0],0.5)*self.prob(dm[1],0.5)*self.prob(dm[2],0.5)
+        # print(pos)
         # set_trace()
+        # dm = boxminus(np.atleast_2d(true_state[6:10]).T,state[6:10])
+        rot = 1.0 #self.prob(dm[0],0.5)*self.prob(dm[1],0.5)*self.prob(dm[2],0.5)
         return pos*rot
 
     def get_mu(self):

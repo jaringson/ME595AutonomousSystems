@@ -6,10 +6,12 @@ from importlib import reload
 
 from pf import PF
 from FixedWing import FixedWing
+from uav_animation import Animation
 
 data = np.load("gather4.npz")
 pf = PF()
 fw = FixedWing()
+animation = Animation()
 
 truth = np.array([])
 estimate = np.array([])
@@ -18,15 +20,12 @@ time = 0
 
 dt = 0
 
-fig = plt.figure(10)
-plt.ion()
-ax = fig.add_subplot(111, projection='3d')
-plt.pause(0.01)
+
 
 for i in range(data['x'].shape[1]):
     dt += data['dt'][i]
     time += data['dt'][i]
-    if dt > 0.1:
+    if dt > 0.01:
         pf.run(data['x'][:,i], data['u'][:,i], dt)
 
         dt = 0
@@ -39,15 +38,17 @@ for i in range(data['x'].shape[1]):
             truth = np.vstack((truth,data['x'][:,i]))
             estimate = np.hstack((estimate,pf.get_mu()))
         # set_trace()
-        fw.visualize(pf.get_mu(),pf.get_particles(),ax)
+        # fw.visualize(pf.get_mu(),pf.get_particles(),ax)
         # fw.visualize(np.atleast_2d(data['x'][:,i]).T,ax)
+        animation.drawAll(data['x'][:,i],pf.get_particles())
+        plt.pause(0.001)
 
-    print(time)
+    # print(time)
     if time > 2:
         break
 truth = truth.T
 
-fig, axes = plt.subplots(3, 1, sharey=True)
+fig, axes = plt.subplots(3, 1, sharey=True, sharex=True)
 for i in range(3):
     # set_trace()
     axes[i].plot(time_array,truth[i,:]-estimate[i,:])

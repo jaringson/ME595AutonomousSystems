@@ -69,9 +69,9 @@ animation = Animation()
 
 for i in range(data['z'].shape[2]):
     print(i)
-    if i % 50 == 0:
-        animation.drawAll(data['X'][:,i], grid)
-        plt.pause(0.01)
+    # if i % 50 == 0:
+    #     animation.drawAll(data['X'][:,i], grid)
+    #     plt.pause(0.01)
         # break
     x,y,theta = data['X'][:,i]
     for cell in grid:

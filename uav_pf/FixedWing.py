@@ -61,7 +61,7 @@ class FixedWing(Model):
 
 
     def forward_simulate_dt(self,x,u,dt=.01):
-        x = deepcopy(np.atleast_2d(x).T)
+        x = deepcopy(np.atleast_2d(x))
         # set_trace()
         self._state = x
         # u = deepcopy(u.clip(-self.uMax,self.uMax))
@@ -74,18 +74,20 @@ class FixedWing(Model):
         # xdot[1,:] = x[0,:]
         # x = x + xdot*dt
 
+
+
         self._state[self._state<-1e100]=0
         self._state[self._state>1e100]=0
-        k1 = self._derivatives(self._state, forces_moments).reshape((-1,13)).T
+        k1 = self._derivatives(self._state, forces_moments)
         k1[k1<-1e100]=0
         k1[k1>1e100]=0
-        k2 = self._derivatives(self._state + dt/2.*k1, forces_moments).reshape((-1,13)).T
+        k2 = self._derivatives(self._state + dt/2.*k1, forces_moments)
         k2[k2<-1e100]=0
         k2[k2>1e100]=0
-        k3 = self._derivatives(self._state + dt/2.*k2, forces_moments).reshape((-1,13)).T
+        k3 = self._derivatives(self._state + dt/2.*k2, forces_moments)
         k3[k3<-1e100]=0
         k3[k3>1e100]=0
-        k4 = self._derivatives(self._state + dt*k3, forces_moments).reshape((-1,13)).T
+        k4 = self._derivatives(self._state + dt*k3, forces_moments)
         k4[k4<-1e100]=0
         k4[k4>1e100]=0
         self._state += dt/6.0 * (k1 + 2.0*k2 + 2.0*k3 + k4)
@@ -193,12 +195,14 @@ class FixedWing(Model):
         q = state[11]
         r = state[12]
         #   extract forces/moments
-        fx = forces_moments[:,0]
-        fy = forces_moments[:,1]
-        fz = forces_moments[:,2]
-        l = forces_moments[:,3]
-        m = forces_moments[:,4]
-        n = forces_moments[:,5]
+        fx = forces_moments[0]
+        fy = forces_moments[1]
+        fz = forces_moments[2]
+        l = forces_moments[3]
+        m = forces_moments[4]
+        n = forces_moments[5]
+
+
 
 
         with warnings.catch_warnings():
@@ -229,9 +233,9 @@ class FixedWing(Model):
         q_dot = MAV.gamma5*p*r - MAV.gamma6*(p**2-r**2) + m/MAV.Jy
         r_dot = MAV.gamma7*p*q - MAV.gamma1*q*r + MAV.gamma4*l + MAV.gamma8*n
 
+
         # collect the derivative of the states
-        x_dot = np.array([[pn_dot, pe_dot, pd_dot, u_dot, v_dot, w_dot,
-                           e0_dot, e1_dot, e2_dot, e3_dot, p_dot, q_dot, r_dot]]).T
+        x_dot = np.array([pn_dot, pe_dot, pd_dot, u_dot, v_dot, w_dot, e0_dot, e1_dot, e2_dot, e3_dot, p_dot, q_dot, r_dot])
 
         return x_dot
 
@@ -254,6 +258,7 @@ class FixedWing(Model):
         p = self._state[10]
         q = self._state[11]
         r = self._state[12]
+
 
         self._Va = np.sqrt(self._state[3]**2 + self._state[4]**2 + self._state[5]**2)
         self._alpha = np.arctan(self._state[5]/self._state[3])
@@ -287,11 +292,9 @@ class FixedWing(Model):
         b = MAV.b/(2*self._Va)
 
 
-        Fa = 0.5*MAV.rho*self._Va**2*MAV.S_wing* (np.array([\
-            [1,0,0],[0,1,0],[0,0,1]]) @ np.array([cxa(self._alpha)+cxq(self._alpha)*c*q+cxde(self._alpha)*de,
+        Fa = 0.5*MAV.rho*self._Va**2*MAV.S_wing * ( np.array([[1,0,0],[0,1,0],[0,0,1]]) @ np.vstack((cxa(self._alpha)+cxq(self._alpha)*c*q+cxde(self._alpha)*de,
             MAV.C_Y_0+MAV.C_Y_beta*self._beta+MAV.C_Y_p*b*p+MAV.C_Y_r*b*r+MAV.C_Y_delta_a*da+MAV.C_Y_delta_r*dr,
-            cza(self._alpha)+czq(self._alpha)*c*q+czde(self._alpha)*de,
-            ]))
+            cza(self._alpha)+czq(self._alpha)*c*q+czde(self._alpha)*de)) )
 
 
         F = Fg + Fa
@@ -313,11 +316,10 @@ class FixedWing(Model):
         fz = F[2]
 
         #  Moment time!!!
-        Ma = 0.5*MAV.rho*self._Va**2*MAV.S_wing*np.array([\
-            MAV.b*(MAV.C_ell_0+MAV.C_ell_beta*self._beta+MAV.C_ell_p*b*p+MAV.C_ell_r*b*r+MAV.C_ell_delta_a*da+MAV.C_ell_delta_r*dr),
+        Ma = 0.5*MAV.rho*self._Va**2*MAV.S_wing*np.vstack((MAV.b*(MAV.C_ell_0+MAV.C_ell_beta*self._beta+MAV.C_ell_p*b*p+MAV.C_ell_r*b*r+MAV.C_ell_delta_a*da+MAV.C_ell_delta_r*dr),
             MAV.c*(MAV.C_m_0+(MAV.C_m_alpha*self._alpha)+(MAV.C_m_q*c*q)+(MAV.C_m_delta_e*de)),
-            MAV.b*(MAV.C_n_0+(MAV.C_n_beta*self._beta)+(MAV.C_n_p*b*p)+(MAV.C_n_r*b*r)+(MAV.C_n_delta_a*da)+(MAV.C_n_delta_r*dr))
-            ])
+            MAV.b*(MAV.C_n_0+(MAV.C_n_beta*self._beta)+(MAV.C_n_p*b*p)+(MAV.C_n_r*b*r)+(MAV.C_n_delta_a*da)+(MAV.C_n_delta_r*dr)) ))
+
         # print("\nMa:", Ma)
 
         size = 1
@@ -345,4 +347,4 @@ class FixedWing(Model):
         # self._forces[0] = fx
         # self._forces[1] = fy
         # self._forces[2] = fz
-        return np.array([fx, fy, fz, Mx, My, Mz]).T
+        return np.array([fx, fy, fz, Mx, My, Mz])
