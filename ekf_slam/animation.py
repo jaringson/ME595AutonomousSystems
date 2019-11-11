@@ -4,9 +4,9 @@ import numpy as np
 from IPython.core.debugger import set_trace
 from importlib import reload
 
-import params
-reload(params)
 import params as P
+
+from estimator_type import Estimator
 
 class Animation:
     '''
@@ -21,6 +21,8 @@ class Animation:
         self.ax = self.fig.add_subplot(111)
         # self.ax2 = self.fig.add_subplot(122)
         # self.fig.subplots_adjust(bottom=0.25)
+
+        self.index = 0
 
         self.set_up_ax(self.ax)
         self.plotObjects = []
@@ -40,25 +42,39 @@ class Animation:
         ax.set_title(title)
 
 
-    def draw(self, state, ekf_slam):
-        landmarks = ekf_slam.landmarks
-        mu = ekf_slam.get_mu()
-        sig = ekf_slam.Sig
+    def draw(self, state, estimator):
+        landmarks = estimator.landmarks
+        mu = estimator.get_mu()
 
         self.drawVehicle(state)
         self.drawLandmarks(landmarks)
-        self.drawLandmarkEstimates(mu, sig)
+
+        if estimator.est_type == Estimator.EKF_SLAM:
+            sig = estimator.Sig
+            self.drawEKFSLAMLandmarkEstimates(mu, sig)
+
+        if estimator.est_type == Estimator.FAST_SLAM:
+            Chi = estimator.Chi
+            landmarks_mu = estimator.landmarks_mu
+            # self.drawVehicle(Chi[:,0], color="red", r=0.1)
+            # self.drawLandmarks(landmarks_mu[0].reshape((estimator.N,2)), color="blue")
+            for i in range(Chi.shape[1]):
+                self.drawVehicle(Chi[:,i], color="red", r=0.1)
+                self.drawLandmarks(landmarks_mu[i].reshape((estimator.N,2)), color="blue", r=0.05)
+                # self.index += 1
+
+        self.index = 0
 
 
         if self.flagInit:
             self.flagInit = False
 
 
-    def drawVehicle(self, state, color="limegreen"):
+    def drawVehicle(self, state, color="limegreen", r=0.5):
         x_pos = state[0]
         y_pos = state[1]
         theta = state[2]
-        radius = 0.5
+        radius = r
 
         xy = (x_pos,y_pos)
 
@@ -69,35 +85,38 @@ class Animation:
             self.handle.append(mpatches.CirclePolygon(xy,
                 radius = radius, resolution = 15,
                 fc = color, ec = 'black'))
-            self.ax.add_patch(self.handle[0])
+            self.ax.add_patch(self.handle[self.index])
 
             line, = self.ax.plot(X,Y,lw = 1, c = 'red')
             self.handle.append(line)
         else:
-            self.handle[0]._xy=xy
+            self.handle[self.index]._xy=xy
 
-            self.handle[1].set_xdata(X)
-            self.handle[1].set_ydata(Y)
+            self.handle[self.index+1].set_xdata(X)
+            self.handle[self.index+1].set_ydata(Y)
+        self.index += 2
 
 
-    def drawLandmarks(self, landmarks, color="red"):
+    def drawLandmarks(self, landmarks, color="red", r=0.2):
         N = len(landmarks)
+        # set_trace()
         for i in range(N):
-            index = 2 + i
+            # index = 2 + i
             xy = ( landmarks[i][0], landmarks[i][1] )
 
-            radius = 0.2
+            radius = r
 
             if self.flagInit == True:
                 self.handle.append(mpatches.CirclePolygon(xy,
                     radius = radius, resolution = 15,
                     fc = color, ec = 'black'))
-                self.ax.add_patch(self.handle[index])
+                self.ax.add_patch(self.handle[self.index])
             else:
-                self.handle[index]._xy=xy
+                self.handle[self.index]._xy=xy
+            self.index += 1
 
 
-    def drawLandmarkEstimates(self, mu, sig, color="blue"):
+    def drawEKFSLAMLandmarkEstimates(self, mu, sig, color="blue"):
         N = ( len(mu)-3 ) // 2
 
         for i in range(N):
@@ -115,7 +134,7 @@ class Animation:
             # print(a,b,w)
             # print(land_sig)
             # set_trace()
-            index = 2 + N + 2*i
+            # index = 2 + N + 2*i
             radius = 0.2
 
             # if a > 10:
@@ -136,18 +155,19 @@ class Animation:
                 self.handle.append(mpatches.CirclePolygon(xy,
                     radius = radius, resolution = 15,
                     fc = color, ec = 'black'))
-                self.ax.add_patch(self.handle[index])
+                self.ax.add_patch(self.handle[self.index])
 
                 self.handle.append(mpatches.Ellipse(xy,
                     width = 2*a, height = 2*b, angle = angle,
                     fc = 'gray', ec = 'black', alpha=0.1))
 
-                self.ax.add_patch(self.handle[index])
-                self.ax.add_patch(self.handle[index+1])
+                self.ax.add_patch(self.handle[self.index+1])
+                # self.ax.add_patch(self.handle[self.index+1])
             else:
-                self.handle[index]._xy=xy
+                self.handle[self.index]._xy=xy
 
-                self.handle[index+1].set_center(xy)
-                self.handle[index+1].width=2*a
-                self.handle[index+1].height=2*b
-                self.handle[index+1].angle=angle
+                self.handle[self.index+1].set_center(xy)
+                self.handle[self.index+1].width=2*a
+                self.handle[self.index+1].height=2*b
+                self.handle[self.index+1].angle=angle
+            self.index += 2

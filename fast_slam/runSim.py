@@ -4,21 +4,21 @@ import matplotlib.pyplot as plt
 from IPython.core.debugger import set_trace
 from importlib import reload
 
-# import sys
-# sys.path.append("../")
+import sys
+sys.path.append("../ekf_slam")
 
 import params as P
 from dynamics import Dynamics
 from animation import Animation
 from plotData import plotData
-from ekf_slam import EKF_SLAM
+from fast_slam import FAST_SLAM
 
 from copy import deepcopy
 
 dynamics = Dynamics()
 animation = Animation()
-dataPlot = plotData()
-ekf_slam = EKF_SLAM()
+# dataPlot = plotData()
+fast_slam = FAST_SLAM()
 
 estimate = np.array([])
 actual = np.array([])
@@ -29,30 +29,30 @@ while t < P.t_end:
     while t < t_next_plot:
         t = t + P.Ts
         vc = 1.25+0.5*np.cos(2*np.pi*(0.2)*t)
-        omegac = -0.2+0.2*np.cos(2*np.pi*(0.6)*t)
+        omegac = -0.5+0.2*np.cos(2*np.pi*(0.6)*t)
         noise_v = vc + np.random.normal(0, np.sqrt(P.alpha1*vc**2+P.alpha2*omegac**2))
         noise_omega = omegac + np.random.normal(0, np.sqrt(P.alpha3*vc**2+P.alpha4*omegac**2))
 
         u = [noise_v,noise_omega]
         dynamics.propagateDynamics(u)
-        ekf_slam.run(dynamics.states(), u)
-        animation.draw(dynamics.states(), ekf_slam)
+        fast_slam.run(dynamics.states(), u)
+        animation.draw(dynamics.states(), fast_slam)
 
         if estimate.size == 0:
-            estimate = np.array(ekf_slam.get_mu())
+            estimate = np.array(fast_slam.get_mu())
             actual = np.array(dynamics.states())
         else:
-            estimate = np.vstack((estimate, ekf_slam.get_mu()))
+            estimate = np.vstack((estimate, fast_slam.get_mu()))
             actual = np.vstack((actual, dynamics.states()))
 
-    dataPlot.update(t, dynamics.states(), ekf_slam.get_mu(), ekf_slam.get_sig())
+    # dataPlot.update(t, dynamics.states(), fast_slam.get_mu(), fast_slam.get_sig())
 
 
     plt.pause(0.001)
 
-fig = plt.figure(6)
-Sig = deepcopy(ekf_slam.Sig)
-plt.imshow(Sig)
+# fig = plt.figure(6)
+# Sig = deepcopy(ekf_slam.Sig)
+# plt.imshow(Sig)
 
 # Keeps the program from closing until the user presses a button.
 # print('Press key to close')

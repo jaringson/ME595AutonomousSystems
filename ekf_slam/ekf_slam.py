@@ -2,12 +2,15 @@ import numpy as np
 from IPython.core.debugger import set_trace
 from importlib import reload
 
-import params
-reload(params)
 import params as P
+
+from estimator_type import Estimator
 
 class EKF_SLAM:
     def __init__(self):
+
+        self.est_type = Estimator.EKF_SLAM
+
         self.Q = np.eye(2)
         self.Q[0][0] = P.sig_r**2
         self.Q[1][1] = P.sig_phi**2
@@ -93,7 +96,7 @@ class EKF_SLAM:
     def update(self, state, index):
 
         landmark = self.landmarks[index]
-        beta = np.radians(45)
+        beta = np.radians(360)
 
 
         range = np.sqrt((landmark[0]-state[0])**2+(landmark[1]-state[1])**2) + np.random.normal(0,P.sig_r)

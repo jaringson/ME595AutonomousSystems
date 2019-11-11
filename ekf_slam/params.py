@@ -4,7 +4,7 @@ import numpy as np
 t_start = 0.0  # Start time of simulation
 t_end = 40.0  # End time of simulation
 Ts = 0.1  # sample time for simulation
-t_plot = 0.5  # the plotting and animation is updated at this rate
+t_plot = 0.1  # the plotting and animation is updated at this rate
 
 
 # vehicleSpeed = 5.0
@@ -25,6 +25,8 @@ alpha1 = 0.1
 alpha2 = 0.01
 alpha3 = 0.01
 alpha4 = 0.1
+alpha5 = 0.01
+alpha6 = 0.01
 
 sig_r = 0.1
 sig_phi = 0.05
