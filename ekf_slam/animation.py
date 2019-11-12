@@ -12,23 +12,23 @@ class Animation:
     '''
         Create pendulum animation
     '''
-    def __init__(self):
+    def __init__(self, estimator):
         self.flagInit = True
         # self.fig, self.ax = plt.subplots()
         self.handle = []
 
-        self.fig = plt.figure(1)
+        self.fig = plt.figure(3)
         self.ax = self.fig.add_subplot(111)
         # self.ax2 = self.fig.add_subplot(122)
         # self.fig.subplots_adjust(bottom=0.25)
 
         self.index = 0
 
-        self.set_up_ax(self.ax)
+        self.set_up_ax(self.ax, estimator)
         self.plotObjects = []
 
 
-    def set_up_ax(self, ax, title='2D Test'):
+    def set_up_ax(self, ax, estimator):
         maxAxis = 20
 
         ax.set_xlim([-maxAxis, maxAxis])
@@ -39,7 +39,7 @@ class Animation:
         # ax.set_ylim([-8, 8])
         ax.set_ylabel('Y')
 
-        ax.set_title(title)
+        ax.set_title(estimator.title)
 
 
     def draw(self, state, estimator):
@@ -129,8 +129,8 @@ class Animation:
                 angle += 2*np.pi
             angle = np.degrees(angle)
             chisquare_val = 2.4477 # 95% Confidence Interval
-            a = chisquare_val*np.sqrt(w[0])
-            b = chisquare_val*np.sqrt(w[1])
+            a = chisquare_val*np.sqrt(w[k])
+            b = chisquare_val*np.sqrt(w[1-k])
             # print(a,b,w)
             # print(land_sig)
             # set_trace()

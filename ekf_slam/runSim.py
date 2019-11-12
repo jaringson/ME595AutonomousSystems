@@ -16,9 +16,9 @@ from ekf_slam import EKF_SLAM
 from copy import deepcopy
 
 dynamics = Dynamics()
-animation = Animation()
 dataPlot = plotData()
 ekf_slam = EKF_SLAM()
+animation = Animation(ekf_slam)
 
 estimate = np.array([])
 actual = np.array([])
@@ -29,7 +29,7 @@ while t < P.t_end:
     while t < t_next_plot:
         t = t + P.Ts
         vc = 1.25+0.5*np.cos(2*np.pi*(0.2)*t)
-        omegac = -0.2+0.2*np.cos(2*np.pi*(0.6)*t)
+        omegac = -0.5+0.2*np.cos(2*np.pi*(0.6)*t)
         noise_v = vc + np.random.normal(0, np.sqrt(P.alpha1*vc**2+P.alpha2*omegac**2))
         noise_omega = omegac + np.random.normal(0, np.sqrt(P.alpha3*vc**2+P.alpha4*omegac**2))
 

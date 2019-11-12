@@ -10,6 +10,9 @@ class EKF_SLAM:
     def __init__(self):
 
         self.est_type = Estimator.EKF_SLAM
+        self.title = "EKF SLAM"
+
+        self.fov = np.radians(90)
 
         self.Q = np.eye(2)
         self.Q[0][0] = P.sig_r**2
@@ -38,10 +41,13 @@ class EKF_SLAM:
         lm17 = [6,-15]
         lm18 = [2,10]
         lm19 = [-10,-10]
+        lm20 = [-7,-3]
+        lm21 = [10,-3]
 
+        # self.landmarks = [lm1]
         self.landmarks = [lm1, lm2, lm3, lm4, lm5, lm6, lm7,
             lm8, lm9, lm10, lm11, lm12, lm13, lm14,
-            lm15, lm16, lm17, lm18, lm19]
+            lm15, lm16, lm17, lm18, lm19, lm20, lm21]
 
         # self.Sig = np.diag((1,1,0.1))
 
@@ -96,7 +102,6 @@ class EKF_SLAM:
     def update(self, state, index):
 
         landmark = self.landmarks[index]
-        beta = np.radians(360)
 
 
         range = np.sqrt((landmark[0]-state[0])**2+(landmark[1]-state[1])**2) + np.random.normal(0,P.sig_r)
@@ -107,7 +112,7 @@ class EKF_SLAM:
             ])
 
         # print(bearing)
-        if(np.abs(self.wrap_angle(bearing)) < beta/2.0):
+        if(np.abs(self.wrap_angle(bearing)) < self.fov/2.0):
             # print(index)
             land_mu = self.mu[3+2*index:3+2*index+2]
             if(land_mu == 0).all():

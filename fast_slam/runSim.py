@@ -16,9 +16,9 @@ from fast_slam import FAST_SLAM
 from copy import deepcopy
 
 dynamics = Dynamics()
-animation = Animation()
-# dataPlot = plotData()
+dataPlot = plotData()
 fast_slam = FAST_SLAM()
+animation = Animation(fast_slam)
 
 estimate = np.array([])
 actual = np.array([])
@@ -45,7 +45,7 @@ while t < P.t_end:
             estimate = np.vstack((estimate, fast_slam.get_mu()))
             actual = np.vstack((actual, dynamics.states()))
 
-    # dataPlot.update(t, dynamics.states(), fast_slam.get_mu(), fast_slam.get_sig())
+    dataPlot.update(t, dynamics.states(), fast_slam.get_mu(), fast_slam.get_sig())
 
 
     plt.pause(0.001)
