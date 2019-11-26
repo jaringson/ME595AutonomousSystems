@@ -32,7 +32,7 @@ obs1[9:19,59:64] = -5000
 obs2[44:64,9:44] = -5000
 
 # Another obstacle
-obs3[42:99,74:84] = -5000
+obs3[42:90,74:84] = -5000
 obs3[69:79,49:74] = -5000
 
 # The goal states
@@ -55,17 +55,18 @@ map_d1 = deepcopy(map)
 
 plot = 10000
 counter = 0
+lam = 0.99
 
-while error > 1e-4:
+while error > 1e-10:
     north = map[2:N+2,1:N+1]
     east = map[1:N+1,2:N+2]
     south = map[0:N,1:N+1]
     west = map[1:N+1,0:N]
 
-    m_north = -2 + 0.8 * north + 0.1 * east + 0.1 * west
-    m_east = -2 + 0.8 * east + 0.1 * north + 0.1 * south
-    m_south = -2 + 0.8 * south + 0.1 * east + 0.1 * west
-    m_west = -2 + 0.8 * west + 0.1 * north + 0.1 * south
+    m_north = lam*(-2 + 0.8 * north + 0.1 * east + 0.1 * west)
+    m_east = lam*(-2 + 0.8 * east + 0.1 * north + 0.1 * south)
+    m_south = lam*(-2 + 0.8 * south + 0.1 * east + 0.1 * west)
+    m_west = lam*(-2 + 0.8 * west + 0.1 * north + 0.1 * south)
 
     n_e = np.maximum(m_north, m_east)
     s_w = np.maximum(m_south, m_west)
@@ -132,10 +133,11 @@ while True:
     if indices[i,j] == 2:
         current[1] += 1
     if indices[i,j] == 3:
-        current[1] += 1
+        current[1] -= 1
 
     all_x.append(current[0]+1)
     all_y.append(current[1]+1)
+    # print(current)
 plt.plot(all_x, all_y)
 
 plt.show()
